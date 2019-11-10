@@ -15,19 +15,22 @@ String placemarkAddress(Placemark placemark) {
   String add = "";
   add += _getAddressPart(placemark.name);
   add += _getAddressPart(placemark.subThoroughfare);
-  if(placemark.subThoroughfare!=placemark.thoroughfare)add += _getAddressPart(placemark.thoroughfare);
+  if (placemark.subThoroughfare.compareTo(placemark.thoroughfare) != 0)
+    add += _getAddressPart(placemark.thoroughfare);
   add += _getAddressPart(placemark.subLocality);
-  if(placemark.subLocality!=placemark.locality)add += _getAddressPart(placemark.locality);
+  if (placemark.subLocality.compareTo(placemark.locality) != 0)
+    add += _getAddressPart(placemark.locality);
   add += _getAddressPart(placemark.subAdministrativeArea);
-  if(placemark.subAdministrativeArea!=placemark.administrativeArea)add += _getAddressPart(placemark.administrativeArea);
+  if (placemark.subAdministrativeArea.compareTo(placemark.administrativeArea) !=
+      0) add += _getAddressPart(placemark.administrativeArea);
   add += _getAddressPart(placemark.postalCode, comma: false);
   return add;
 }
 
 Future<String> getAddressFromGeoFirePoint(GeoFirePoint point) async {
   try {
-    List<Placemark> placemarks =
-        await Geolocator().placemarkFromCoordinates(point.latitude, point.longitude);
+    List<Placemark> placemarks = await Geolocator()
+        .placemarkFromCoordinates(point.latitude, point.longitude);
     return placemarkAddress(placemarks[0]);
   } on Exception catch (e) {
     print(e);
@@ -91,9 +94,11 @@ String beautifyString(String str) {
 }
 
 String beautifyName(String str) {
+  if (str.length == 0) return str;
+  if (str.length == 1) return str[0].toUpperCase();
   List<String> n = str.split(' ');
   for (int i = 0; i < n.length; i++) {
-    n[i] = n[i][0].toUpperCase() + n[i].substring(1);
+    if (n[i].length > 1) n[i] = n[i][0].toUpperCase() + n[i].substring(1);
   }
   String nn = "";
   for (int i = 0; i < n.length; i++) {

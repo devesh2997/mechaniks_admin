@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:mechaniks_admin/data/mechanics_repository.dart';
 import 'package:mechaniks_admin/models/mechanic.dart';
 import 'package:mechaniks_admin/utils/index.dart';
+import 'package:mechaniks_admin/widgets/map.dart';
 import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
@@ -27,17 +28,7 @@ class _AddMechanicFormState extends State<AddMechanicForm> {
   final TextEditingController mobileController = TextEditingController();
   GeoFirePoint location;
 
-  Completer<GoogleMapController> _controller = Completer();
-  GoogleMapController mapController;
-
   String address;
-
-  bool showMarker;
-
-  static final CameraPosition _kGooglePlex = CameraPosition(
-    target: LatLng(37.42796133580664, -122.085749655962),
-    zoom: 14.4746,
-  );
 
   bool submittingMechanic;
 
@@ -46,47 +37,18 @@ class _AddMechanicFormState extends State<AddMechanicForm> {
     super.initState();
     location = GeoFirePoint(0, 0);
     submittingMechanic = false;
-    showMarker = false;
     address = "";
-    initLocation();
-  }
-
-  Future<void> updateAddress() async {
-    String add = await getAddressFromGeoFirePoint(location);
-    setState(() {
-      address = add;
-    });
   }
 
   Future<void> updateLocation(double latitude, double longitude) async {
     try {
+      String add = await getAddressFromGeoFirePoint(location);
       setState(() {
         location = GeoFirePoint(latitude, longitude);
+        address = add;
       });
     } on Exception catch (e) {
       print(e);
-    }
-  }
-
-  Future<void> initLocation() async {
-    Position position = await Geolocator()
-        .getCurrentPosition(desiredAccuracy: LocationAccuracy.best);
-    double latitude = position.latitude;
-    double longitude = position.longitude;
-    setState(() {
-      location = GeoFirePoint(latitude, longitude);
-    });
-    await updateAddress();
-
-    CameraPosition cameraPosition =
-        CameraPosition(target: LatLng(latitude, longitude), zoom: 14.4746);
-    if (mapController != null) {
-      CameraUpdate cameraUpdate =
-          CameraUpdate.newCameraPosition(cameraPosition);
-      await mapController.moveCamera(cameraUpdate);
-      setState(() {
-        showMarker = true;
-      });
     }
   }
 
@@ -116,149 +78,133 @@ class _AddMechanicFormState extends State<AddMechanicForm> {
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
-    Marker marker = Marker(
-      markerId: MarkerId('loc'),
-      position: LatLng(location.latitude, location.longitude),
-    );
     return Scaffold(
-      body: Column(
+      body: Stack(
         children: <Widget>[
-          SizedBox(
-            height: 50,
-          ),
-          Text(
-            'ADD MECHANIC',
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.black87,
-              fontWeight: FontWeight.w600,
+          Container(
+            height: size.height * 0.6,
+            child: MechaniksMap(
+              onCurrenLocationChanged: updateLocation,
             ),
           ),
-          SizedBox(
-            height: 10,
-          ),
-          Expanded(
-            child: Container(
-              color: Colors.grey.shade100,
-              child: Form(
-                key: formKey,
-                child: ListView(
-                  children: <Widget>[
+          Container(
+            margin: EdgeInsets.only(top: size.height * 0.5),
+            color: Colors.white,
+            child: Form(
+              key: formKey,
+              child: ListView(
+                children: <Widget>[
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 15, vertical: 0),
+                    margin: EdgeInsets.only(bottom: 15),
+                    color: Colors.white,
+                    child: Column(
+                      children: <Widget>[
+                        if (address != null && address.length > 0)
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Text('Location : '),
+                              SizedBox(
+                                width: 5,
+                              ),
+                              Flexible(
+                                child: Column(
+                                  children: <Widget>[
+                                    Text(
+                                      address,
+                                      maxLines: 5,
+                                    ),
+                                  ],
+                                ),
+                              )
+                            ],
+                          ),
+                        SizedBox(height: 5),
+                        StringInputField(
+                          label: "FULL NAME",
+                          controller: nameController,
+                        ),
+                        SizedBox(height: 5),
+                        MobileInputField(
+                          controller: mobileController,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (submittingMechanic)
+                    CircularProgressIndicator()
+                  else
                     Container(
                       padding:
-                          EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-                      margin: EdgeInsets.only(bottom: 15),
+                          EdgeInsets.symmetric(horizontal: 15, vertical: 5),
                       color: Colors.white,
+                      margin: EdgeInsets.only(bottom: 15),
                       child: Column(
                         children: <Widget>[
-                          Container(
-                            height: size.height * 0.5,
-                            child: GoogleMap(
-                              onCameraMove: (cameraPosition) {
-                                updateLocation(cameraPosition.target.latitude,
-                                    cameraPosition.target.longitude);
-                              },
-                              onCameraIdle: () {
-                                updateAddress();
-                              },
-                              gestureRecognizers: Set()
-                                ..add(Factory<PanGestureRecognizer>(
-                                    () => PanGestureRecognizer()))
-                                ..add(Factory<ScaleGestureRecognizer>(
-                                    () => ScaleGestureRecognizer()))
-                                ..add(Factory<TapGestureRecognizer>(
-                                    () => TapGestureRecognizer()))
-                                ..add(Factory<VerticalDragGestureRecognizer>(
-                                    () => VerticalDragGestureRecognizer())),
-                              myLocationEnabled: true,
-                              scrollGesturesEnabled: true,
-                              mapType: MapType.normal,
-                              markers: showMarker
-                                  ? Set<Marker>.from([marker])
-                                  : Set(),
-                              initialCameraPosition: _kGooglePlex,
-                              onMapCreated: (GoogleMapController controller) {
-                                _controller.complete(controller);
-                                setState(() {
-                                  mapController = controller;
-                                });
-                              },
-                            ),
-                          ),
-                          SizedBox(height: 5),
-                          if (address != null && address.length > 0)
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Text('Location : '),
-                                SizedBox(
-                                  width: 5,
+                          Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: MaterialButton(
+                                  padding: EdgeInsets.all(0),
+                                  child: Text("CANCEL"),
+                                  onPressed: () {
+                                    if (Navigator.of(context).canPop())
+                                      Navigator.of(context).pop();
+                                  },
                                 ),
-                                Flexible(
-                                  child: Column(
-                                    children: <Widget>[
-                                      Text(
-                                        address,
-                                        maxLines: 5,
-                                      ),
-                                    ],
+                              ),
+                              Expanded(
+                                child: MaterialButton(
+                                  padding: EdgeInsets.all(0),
+                                  color: getPrimaryColor(),
+                                  child: Text(
+                                    "SAVE",
+                                    style: TextStyle(color: Colors.white),
                                   ),
-                                )
-                              ],
+                                  onPressed: () async {
+                                    saveMechanic();
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(
+                            height: 50,
+                          ),
+                          MaterialButton(
+                            onPressed: () {},
+                            child: Text(
+                              'Bulk upload test merchants.',
+                              style: TextStyle(
+                                color: Colors.white,
+                              ),
                             ),
-                          SizedBox(height: 5),
-                          StringInputField(
-                            label: "FULL NAME",
-                            controller: nameController,
-                          ),
-                          SizedBox(height: 5),
-                          MobileInputField(
-                            controller: mobileController,
-                          ),
+                            color: Colors.blue,
+                          )
                         ],
                       ),
                     ),
-                    if (submittingMechanic)
-                      CircularProgressIndicator()
-                    else
-                      Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-                        color: Colors.white,
-                        margin: EdgeInsets.only(bottom: 15),
-                        child: Row(
-                          children: <Widget>[
-                            Expanded(
-                              child: MaterialButton(
-                                padding: EdgeInsets.all(0),
-                                child: Text("CANCEL"),
-                                onPressed: () {
-                                  if (Navigator.of(context).canPop())
-                                    Navigator.of(context).pop();
-                                },
-                              ),
-                            ),
-                            Expanded(
-                              child: MaterialButton(
-                                padding: EdgeInsets.all(0),
-                                color: getPrimaryColor(),
-                                child: Text(
-                                  "SAVE",
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                onPressed: () async {
-                                  saveMechanic();
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
+                ],
               ),
             ),
-          )
+          ),
+          Container(
+            padding: const EdgeInsets.all(25.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Text(
+                  'ADD MECHANIC',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

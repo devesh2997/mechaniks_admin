@@ -56,7 +56,7 @@ class MechanicsList extends StatelessWidget {
     return ListView(
       children: <Widget>[
         for (int i = 0; i < mechanics.length; i++)
-          new MechanicView(mechanic: mechanics[i])
+          MechanicView(mechanic: mechanics[i])
       ],
     );
   }
