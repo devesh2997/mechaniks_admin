@@ -4,10 +4,11 @@ import 'package:geoflutterfire/geoflutterfire.dart';
 class Mechanic {
   final String id;
   final String name;
+  final String email;
   final String mobile;
   final GeoFirePoint location;
 
-  Mechanic({this.id, this.name, this.mobile, this.location});
+  Mechanic({this.id, this.name, this.mobile, this.location, this.email});
 
   factory Mechanic.fromMap(Map data) {
     GeoPoint point = data['location']['geopoint'];
@@ -16,6 +17,7 @@ class Mechanic {
       name: data['name'] ?? '',
       mobile: data['mobile'] ?? '',
       location: GeoFirePoint(point.latitude, point.longitude),
+      email: data['email']
     );
   }
 
@@ -30,6 +32,7 @@ class Mechanic {
     mechanicMap['name'] = this.name;
     mechanicMap['mobile'] = this.mobile;
     mechanicMap['location'] = this.location.data;
+    mechanicMap['email'] = this.email;
 
     return mechanicMap;
   }

@@ -24,6 +24,8 @@ class AddMechanicForm extends StatefulWidget {
 }
 
 class _AddMechanicFormState extends State<AddMechanicForm> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
   final TextEditingController nameController = TextEditingController();
   final TextEditingController mobileController = TextEditingController();
   GeoFirePoint location;
@@ -62,9 +64,10 @@ class _AddMechanicFormState extends State<AddMechanicForm> {
       mechanicData['name'] = nameController.value.text;
       mechanicData['mobile'] = '+91' + mobileController.value.text;
       mechanicData['location'] = location.data;
+      mechanicData['email'] = emailController.text;
       Mechanic mechanic = Mechanic.fromMap(mechanicData);
       bool result =
-          await Provider.of<MechanicsRepository>(context).addMechanic(mechanic);
+          await Provider.of<MechanicsRepository>(context).addMechanic(mechanic,passwordController.text);
       if (result)
         Navigator.of(context).pop();
       else {
@@ -122,6 +125,16 @@ class _AddMechanicFormState extends State<AddMechanicForm> {
                           ),
                         SizedBox(height: 5),
                         StringInputField(
+                          label: "Email",
+                          controller: emailController,
+                        ),
+                        SizedBox(height: 5),
+                        StringInputField(
+                          label: "Password",
+                          controller: passwordController,
+                        ),
+                        SizedBox(height: 5),
+                        StringInputField(
                           label: "FULL NAME",
                           controller: nameController,
                         ),
@@ -169,19 +182,6 @@ class _AddMechanicFormState extends State<AddMechanicForm> {
                               ),
                             ],
                           ),
-                          SizedBox(
-                            height: 50,
-                          ),
-                          MaterialButton(
-                            onPressed: () {},
-                            child: Text(
-                              'Bulk upload test merchants.',
-                              style: TextStyle(
-                                color: Colors.white,
-                              ),
-                            ),
-                            color: Colors.blue,
-                          )
                         ],
                       ),
                     ),
